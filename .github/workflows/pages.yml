@@ -19,9 +19,8 @@
 # build output differs.
 name: Deploy to Pages
 
+# Dispatch only: every deploy goes through shovel, so pushes don't deploy.
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 # Each job sets its own permissions, so the default is none.
