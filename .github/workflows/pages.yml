@@ -7,6 +7,16 @@
 # The deploy job references the `github-pages` environment, so every run
 # creates a Deployment object (with statuses) through the Deployments API.
 # That object is what shovel reads.
+#
+# Shovel triggers this from its own workflows (this repo has no other CI):
+#   POST /repos/flipmine/shovel-demoapp/actions/workflows/pages.yml/dispatches
+#   { "ref": "<branch to deploy>", "return_run_details": true }
+# The dispatch `ref` selects what gets deployed and becomes the Deployment's
+# ref. return_run_details makes the API return the run id (else 204, no body).
+#
+# Pages keys deployments by commit SHA (deploy-pages: GITHUB_SHA). Deploying
+# the SHA that is already live does not replace the live content, even if the
+# build output differs.
 name: Deploy to Pages
 
 on:
