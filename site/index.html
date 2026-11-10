@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shovel-demoapp</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>shovel-demoapp</h1>
+    <p>Test target for shovel e2e runs.</p>
+
+    <dl id="build">
+      <dt>Commit</dt><dd data-key="sha">—</dd>
+      <dt>Ref</dt><dd data-key="ref">—</dd>
+      <dt>Workflow run</dt><dd data-key="run_id">—</dd>
+      <dt>Built at</dt><dd data-key="built_at">—</dd>
+    </dl>
+  </main>
+
+  <script>
+    fetch("version.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((v) => {
+        for (const dd of document.querySelectorAll("#build dd")) {
+          dd.textContent = v[dd.dataset.key] ?? "—";
+        }
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

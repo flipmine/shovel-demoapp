@@ -1,0 +1,70 @@
+# Deploys site/ to GitHub Pages.
+#
+# Based on actions/starter-workflows pages/static.yml, split into build and
+# deploy jobs as in the GitHub Pages custom-workflow docs. Action majors are
+# the latest releases of each action as of 2026-11.
+#
+# The deploy job references the `github-pages` environment, so every run
+# creates a Deployment object (with statuses) through the Deployments API.
+# That object is what shovel reads.
+name: Deploy to Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Each job sets its own permissions, so the default is none.
+permissions: {}
+
+# One Pages deployment at a time. Don't cancel in-progress production deploys.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read # configure-pages calls GET /repos/{repo}/pages
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/configure-pages@v6
+
+      # Stamp the build so e2e tests can tell which commit is live.
+      # Values pass through env, never interpolated into the script.
+      - name: Write version.json
+        env:
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          jq -n \
+            --arg sha "$SHA" \
+            --arg ref "$REF" \
+            --arg run_id "$RUN_ID" \
+            --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{sha: $sha, ref: $ref, run_id: $run_id, built_at: $built_at}' \
+            > site/version.json
+          cat site/version.json
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
